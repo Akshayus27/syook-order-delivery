@@ -55,10 +55,10 @@ exports.deliveredOrder = async function (req, res) {
     if (order) {
         // Updating the delivery status in the order from false to true
         await Order.findOneAndUpdate({ _id: order._id }, { isDelivered: true })
-        try {
-            // Reduce the active orders for the vehicle by 1
-            await activeOrdersUpdate(vehicle)
 
+        // Reduce the active orders for the vehicle by 1
+        await activeOrdersUpdate(vehicle)
+        try {
             // Get all orders for where the delivery vehicle-id is not assigned yet
             let orders = await Order.find({ isDelivered: false, deliveryVehicleId: '' })
             if (orders.length === 0) {
@@ -134,5 +134,5 @@ const getDeliveryVehicleId = async (customer) => {
 
 // Change vehicle's active orders
 const activeOrdersUpdate = async (vehicle) => {
-    await Vehicle.findByIdAndUpdate({ _id: vehicle._id }, { $inc: { activeOrders: -1 } })
+    await Vehicle.findOneAndUpdate({registrationNumber: vehicle.registrationNumber},{ $inc: {activeOrders: -1 }})
 }
