@@ -6,13 +6,15 @@ const Vehicle = require('../models/vehicle')
 
 // Placing an order for the item
 exports.orderItem = async function (req, res) {
-    // Get all the orders and get the order number to assign to the new order
+    // Get all the orders and get the order-number to assign to the new order
     let orders = await Order.find({})
     const orderNumber = await getOrderNumber(orders)
 
-    // Get the delivery vehicle-id for assigning to the order
+    // Get the delivery vehicle-id for assigning it to the order
     const customer = await Customer.findOne({ email: req.customer.email })
     const deliveryVehicleId = await getDeliveryVehicleId(customer)
+
+    // Getting the item-id to assign it to the order
     const item = await Item.findOne({ _id: req.params.id })
 
     // Creating a new document for the invoice collection
@@ -22,7 +24,7 @@ exports.orderItem = async function (req, res) {
         price: item.price
     })
 
-    // Creating a new document for the collection and assign the invoice -id to the order
+    // Creating a new document for the collection and assign the invoice-id to the order
     const order = new Order({
         orderNumber: orderNumber,
         itemId: req.params.id,
@@ -32,7 +34,7 @@ exports.orderItem = async function (req, res) {
         invoiceId: invoice._id
     })
     try {
-        // Save the order and invoice to their respective collection
+        // Save the order and invoice to their respective collections
         await order.save()
         await invoice.save()
         return res.status(200).send('Order is placed')
@@ -45,15 +47,15 @@ exports.orderItem = async function (req, res) {
 // Marking the order delivered
 exports.deliveredOrder = async function (req, res) {
     // Getting the vehicle registration number from the token and see 
-    // if the document's id matches the request send from the token
+    // if the document's id matches the request sent from the token
     const vehicle = await Vehicle.findOne({ regitrationNumber: req.vehicle.regitrationNumber })
     const order = await Order.findOne({ _id: req.params.id, deliveryVehicleId: vehicle._id, isDelivered: false })
     if (order) {
         try {
-            // Updating the delivery status in the order to true
+            // Updating the delivery status in the order from false to true
             await Order.findOneAndUpdate({ _id: order._id }, { isDelivered: true })
 
-            // Reduce the active orders for the vehicle to 1
+            // Reduce the active orders for the vehicle by 1
             await Vehicle.findOneAndUpdate({ _id: vehicle._id }, { $inc: { activeOrders: -1 } })
 
             // Get all orders for where the delivery vehicle-id is not assigned yet
@@ -61,8 +63,8 @@ exports.deliveredOrder = async function (req, res) {
             if (orders.length === 0) {
                 return res.status(200).send('Order delivered')
             }
-            // Sort the orders based on the order number to assign the vehcile
-            // to first order that has been put on hold
+            // Sort the orders in ascending based on the order number
+            // Assign the vehicle to first order that has been put on hold
             orders = orders.sort((a, b) => parseInt(a.orderNumber) - parseInt(b.orderNumber))
             for (let ord of orders) {
                 if (ord.deliveryVehicleId === '') {
@@ -84,17 +86,18 @@ exports.deliveredOrder = async function (req, res) {
     return res.status(200).send('No such order')
 }
 
-// Function to get order's number
+// Function to get order-number
 const getOrderNumber = (orders) => {
     let orderNumber = ''
     if (orders.length >= 1) {
-        // If the length of the order array is greater than one sort it in ascending order based on the order numbers
+        // Sort the orders in descending based on the order numbers
         orders = orders.sort((a, b) => parseInt(b.orderNumber) - parseInt(a.orderNumber))
+
+        // Increment the first order-number in the sorted list and convert it to a string 
         const idNumber = parseInt(orders[0].orderNumber) + 1
-        
-        // Add one number to the last number and change it to the string and add zero as a string
-        // before the number untill it comes upto four digit like string
         orderNumber = String(idNumber)
+        
+        // Prefix zeros to ensure it to be a string of length four
         for (let i = orderNumber.length; i < 4; i++) {
             orderNumber = '0' + orderNumber
         }
@@ -108,8 +111,9 @@ const getOrderNumber = (orders) => {
 
 // Function to get delivery vehicle for order
 const getDeliveryVehicleId = async (customer) => {
-    // Get all the vehicles in the city
+    // Get all the vehicles matching the customer city
     let vehicles = await Vehicle.find({ city: customer.city })
+
     if (vehicles.length >= 1) {
         // Filter out all the vehicles that has orders above 2
         vehicles = vehicles.filter(vehicle => vehicle.activeOrders < 2)
@@ -117,7 +121,8 @@ const getDeliveryVehicleId = async (customer) => {
 
         // Choose a random vehicle from the list and send the vehicle-id
         let idx = Math.floor(Math.random() * (vehicles.length - 1))
-        // Increasing the active orders to 1
+
+        // Increase the active orders of the vehicle by 1
         await Vehicle.findOneAndUpdate({ _id: vehicles[idx]._id }, { $inc: { activeOrders: 1 } })
         return vehicles[idx]._id
     }

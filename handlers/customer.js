@@ -22,7 +22,7 @@ exports.customerRegistration = async function(req, res) {
     const {error} = validCustomerDetail.register.validate(req.body)
     if (error) return res.status(400).send(error.message)
 
-    // Hash the password
+    // Hashing the password
     const salt = bcrypt.genSaltSync(10)
     const password = bcrypt.hashSync(req.body.password, salt)
 
@@ -55,21 +55,22 @@ exports.customerLogin = async function(req, res) {
     // Check if the email-id is present in the collection
     const presentCustomer = await Customer.findOne({email: req.body.email})
     if (presentCustomer) {
-        // Check the hashed password by dehashing it to the typed password
+        // Check the hashed password by dehashing it to the entered password
         const validPassword = bcrypt.compareSync(req.body.password, presentCustomer.password)
         if (!validPassword) return res.status(400).send('Incorrect Password')
 
-        // Creating the token and set it to the header
+        // Creating the token and setting it to the header
         const token = jwt.sign({email: presentCustomer.email}, 'customer')
         return res.header('Authorization', token).status(200).send('Logged in succesfully')
     }
     else {
-        // If the email-id is not present will return without logging-in
+        // If the email-id is not present will return a message without logging-in
         return res.status(400).send('Email doesn\'t exist')
     }
 }
 
 // Return the profile of the customer based on the request of their token
+// verified by the middleware function
 exports.profile = async function(req, res) {
     const customer = await Customer.findOne({email: req.customer.email})
     return res.status(200).send(customer)

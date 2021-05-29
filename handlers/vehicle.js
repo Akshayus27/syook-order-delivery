@@ -18,7 +18,7 @@ const validVehicle = {
 // Register a new vehicle
 exports.vehicleRegistration = async function(req, res) {
     if (req.body.registrationNumber) {
-        // Change the registration number to uppercase to check for regex pattern
+        // Change the registration number to uppercase to check for the regex pattern
         req.body.registrationNumber = req.body.registrationNumber.toUpperCase()
     }
     const {error} = validVehicle.register.validate(req.body)
@@ -48,7 +48,7 @@ exports.vehicleRegistration = async function(req, res) {
 // Login the vehicle
 exports.vehicleLogin = async function(req, res) {
     if (req.body.registrationNumber) {
-        // Change the registration number to uppercase to check for regex pattern
+        // Change the registration number to uppercase to check for the regex pattern
         req.body.registrationNumber = req.body.registrationNumber.toUpperCase()
     }
     const {error} = validVehicle.login.validate(req.body)
@@ -58,12 +58,13 @@ exports.vehicleLogin = async function(req, res) {
     const vehicle = await Vehicle.findOne({registrationNumber: req.body.registrationNumber})
     if (!vehicle) return res.status(400).send('Vehicle number doesn\'t exist')
     
-    // Creating the token and set it to the header
+    // Creating the token and setting it to the header
     const token = jwt.sign({registrationNumber: vehicle.registrationNumber}, 'vehicle')
     return res.header('Authorization', token).status(200).send('Logged in successfully')
 }
 
 // Return the profile of the vehicle based on the request of their token
+// verified by the middleware function
 exports.profile = async function(req, res) {
     const vehicle = await Vehicle.findOne({registrationNumber: req.vehicle.registrationNumber})
     return res.status(200).send(vehicle)

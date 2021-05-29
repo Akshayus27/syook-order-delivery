@@ -4,7 +4,7 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const route = require('./routes/router')
 
-// Assign a port number or to choose one prom the environment hosted
+// Assign a port number or to choose one from the environment hosted
 const PORT = process.env.PORT || 8080
 
 app.use(cors())
@@ -22,5 +22,5 @@ mongoose.connect('mongodb://localhost:27017/Syook', {useNewUrlParser: true, useU
     }
 })
 
-// Listens to the port to cretae a server
+// Listens to the port to create a server
 app.listen(PORT, () => {console.log(`Server up and running on port: ${PORT}`)})
