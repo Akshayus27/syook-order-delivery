@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 
+// Verifies the token is a vehicle's token
 module.exports = function(req, res, next) {
     const token = req.header('Authorization')
     if (!token) return res.status(400).send('Access Denied')

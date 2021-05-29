@@ -13,7 +13,7 @@ router.get('/item/all', verifyCustomer, item.getAllItems)
 // Customer
 router.post('/customer/register', customer.customerRegistration)
 router.post('/customer/login', customer.customerLogin)
-// router.get('/customer/profile')
+router.get('/customer/profile', verifyCustomer, customer.profile)
 
 // Vehicle
 router.post('/vehicle/register', vehicle.vehicleRegistration)
