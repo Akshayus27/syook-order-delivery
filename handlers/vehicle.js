@@ -42,7 +42,7 @@ exports.vehicleRegistration = async function(req, res) {
         // Get all orders for where the delivery vehicle-id is not assigned yet
         let orders = await Order.find({ isDelivered: false, deliveryVehicleId: '' })
         if (orders.length === 0) {
-            return res.status(200).send('Order delivered')
+            return res.header('Authorization', token).status(200).send('Registered successfully')
         }
         // Sort the orders in ascending based on the order number
         // Assign the vehicle to first order that has been put on hold

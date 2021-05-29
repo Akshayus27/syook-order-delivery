@@ -5,7 +5,7 @@ const mongoose = require('mongoose')
 const route = require('./routes/router')
 
 // Assign a port number or to choose one from the environment hosted
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 8081
 
 app.use(cors())
 app.use(express.json())
