@@ -1,4 +1,6 @@
 const Vehicle = require('../models/vehicle')
+const Customer = require('../models/customer')
+const Order = require('../models/order')
 const jwt = require('jsonwebtoken')
 const Joi = require('joi')
 
@@ -36,6 +38,25 @@ exports.vehicleRegistration = async function(req, res) {
     try {
         // Save the customer in the database and set the token to the header
         await vehicle.save()
+
+        // Get all orders for where the delivery vehicle-id is not assigned yet
+        let orders = await Order.find({ isDelivered: false, deliveryVehicleId: '' })
+        if (orders.length === 0) {
+            return res.status(200).send('Order delivered')
+        }
+        // Sort the orders in ascending based on the order number
+        // Assign the vehicle to first order that has been put on hold
+        orders = orders.sort((a, b) => parseInt(a.orderNumber) - parseInt(b.orderNumber))
+        for (let ord of orders) {
+            if (ord.deliveryVehicleId === '') {
+                // Gets the delivery vehicle-id for the order
+                let deliveryVehicleId = await getDeliveryVehicleId(await Customer.findOne({ _id: ord.customerId }))
+                if (deliveryVehicleId) {
+                    // Updates the vehicle-id of the order without one
+                    await Order.findOneAndUpdate({ _id: ord._id }, { deliveryVehicleId: deliveryVehicleId })
+                }
+            }
+        }
         return res.header('Authorization', token).status(200).send('Registered successfully')
     }
     catch (err) {
@@ -68,4 +89,26 @@ exports.vehicleLogin = async function(req, res) {
 exports.profile = async function(req, res) {
     const vehicle = await Vehicle.findOne({registrationNumber: req.vehicle.registrationNumber})
     return res.status(200).send(vehicle)
+}
+
+// Function to get delivery vehicle for order
+const getDeliveryVehicleId = async (customer) => {
+    // Get all the vehicles matching the customer city
+    let vehicles = await Vehicle.find({ city: customer.city })
+
+    if (vehicles.length >= 1) {
+        // Filter out all the vehicles that has orders above 2
+        vehicles = vehicles.filter(vehicle => vehicle.activeOrders < 2)
+        if (vehicles.length === 0) return ''
+
+        // Choose a random vehicle from the list and send the vehicle-id
+        let idx = Math.floor(Math.random() * (vehicles.length - 1))
+
+        // Increase the active orders of the vehicle by 1
+        await Vehicle.findOneAndUpdate({ _id: vehicles[idx]._id }, { $inc: { activeOrders: 1 } })
+        return vehicles[idx]._id
+    }
+    else {
+        return ''
+    }
 }

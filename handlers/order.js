@@ -49,6 +49,8 @@ exports.deliveredOrder = async function (req, res) {
     // Getting the vehicle registration number from the token and see 
     // if the document's id matches the request sent from the token
     const vehicle = await Vehicle.findOne({ registrationNumber: req.vehicle.registrationNumber })
+    if (!vehicle) return res.status(200).send('No such order')
+     
     const order = await Order.findOne({ _id: req.params.id, deliveryVehicleId: vehicle._id, isDelivered: false })
     if (order) {
         // Updating the delivery status in the order from false to true
