@@ -48,15 +48,14 @@ exports.orderItem = async function (req, res) {
 exports.deliveredOrder = async function (req, res) {
     // Getting the vehicle registration number from the token and see 
     // if the document's id matches the request sent from the token
-    const vehicle = await Vehicle.findOne({ regitrationNumber: req.vehicle.regitrationNumber })
+    const vehicle = await Vehicle.findOne({ registrationNumber: req.vehicle.registrationNumber })
     const order = await Order.findOne({ _id: req.params.id, deliveryVehicleId: vehicle._id, isDelivered: false })
     if (order) {
+        // Updating the delivery status in the order from false to true
+        await Order.findOneAndUpdate({ _id: order._id }, { isDelivered: true })
         try {
-            // Updating the delivery status in the order from false to true
-            await Order.findOneAndUpdate({ _id: order._id }, { isDelivered: true })
-
             // Reduce the active orders for the vehicle by 1
-            await Vehicle.findOneAndUpdate({ _id: vehicle._id }, { $inc: { activeOrders: -1 } })
+            await activeOrdersUpdate(vehicle)
 
             // Get all orders for where the delivery vehicle-id is not assigned yet
             let orders = await Order.find({ isDelivered: false, deliveryVehicleId: '' })
@@ -129,4 +128,9 @@ const getDeliveryVehicleId = async (customer) => {
     else {
         return ''
     }
+}
+
+// Change vehicle's active orders
+const activeOrdersUpdate = async (vehicle) => {
+    await Vehicle.findByIdAndUpdate({ _id: vehicle._id }, { $inc: { activeOrders: -1 } })
 }
